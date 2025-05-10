@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf-converter
+  labels:
+    app: pdf-converter
+spec:
+  replicas: 1  # 你可以根据需要增加副本数
+  selector:
+    matchLabels:
+      app: pdf-converter
+  template:
+    metadata:
+      labels:
+        app: pdf-converter
+    spec:
+      containers:
+      - name: pdf-converter
+        image: registry.cn-hangzhou.aliyuncs.com/tianxiang_app/pdf_web_converter:v2
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080  # 容器内部端口
+        env:
+          - name: FLASK_ENV
+            value: "development"  # 设置 Flask 环境变量
+        resources:
+          limits:
+            cpu: 16
+            memory: "8192Mi"
+          requests:
+            cpu: 0.5
+            memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf-converter-service
+spec:
+  selector:
+    app: pdf-converter
+  ports:
+    - protocol: TCP
+      port: 8080  # 服务暴露的端口
+      targetPort: 8080  # 容器的端口
+  type: ClusterIP  # 可以根据需要设置为 LoadBalancer 或 NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name:  pdf-converter-service
+  annotations:
+    # 正则表达式来匹配路径
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # 设置为"0"表示没有限制请求体的大小
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - pdf-converter.tianxiang.love
+      secretName: pdf-converter-tls-secret
+  rules:
+  - host: pdf-converter.tianxiang.love
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name:  pdf-converter-service
+            port:
+              number: 8080

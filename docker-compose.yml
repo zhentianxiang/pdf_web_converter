@@ -1,0 +1,11 @@
+services:
+  pdf_converter:
+    image: registry.cn-hangzhou.aliyuncs.com/tianxiang_app/pdf_web_converter:latest
+    container_name: pdf_converter
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./output_images:/app/output_images
+    environment:
+      - FLASK_ENV=development

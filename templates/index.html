@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF 转图片工具</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary-color: #409eff;
+      --success-color: #67c23a;
+      --warning-color: #e6a23c;
+      --danger-color: #f56c6c;
+      --info-color: #909399;
+      --border-radius: 4px;
+      --box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: var(--box-shadow);
+    }
+    
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #606266;
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--border-radius);
+      border: 1px solid #dcdfe6;
+      transition: border-color 0.2s;
+      font-size: 14px;
+    }
+    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .file-upload {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .file-btn {
+      padding: 10px 16px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .file-btn:hover {
+      background-color: #66b1ff;
+    }
+    
+    .file-name {
+      color: var(--info-color);
+      font-size: 14px;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button[type="submit"]:hover {
+      background-color: #66b1ff;
+    }
+    
+    button[type="submit"]:disabled {
+      background-color: #a0cfff;
+      cursor: not-allowed;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+    
+    .result-container {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background-color: #f0f9eb;
+      border: 1px solid #e1f3d8;
+      color: var(--success-color);
+      text-align: center;
+    }
+    
+    .error-container {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background-color: #fef0f0;
+      border: 1px solid #fde2e2;
+      color: var(--danger-color);
+      text-align: center;
+    }
+    
+    .loading-container {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background-color: #f4f4f5;
+      border: 1px solid #e9e9eb;
+      color: var(--info-color);
+      text-align: center;
+    }
+    
+    .download-link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: var(--success-color);
+      color: white;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      transition: background-color 0.2s;
+    }
+    
+    .download-link:hover {
+      background-color: #85ce61;
+    }
+    
+    .progress-bar {
+      margin-top: 15px;
+      height: 6px;
+      background-color: #ebeef5;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0;
+      transition: width 0.3s;
+    }
+    
+    .status-text {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h2><i class="fas fa-file-pdf"></i> PDF 转图片工具</h2>
+
+      <form @submit.prevent="handleSubmit">
+        <div class="form-group">
+          <label>选择PDF文件：</label>
+          <div class="file-upload">
+            <label class="file-btn">
+              <i class="fas fa-upload"></i>
+              选择文件
+              <input type="file" @change="handleFileChange" accept="application/pdf" />
+            </label>
+            <span class="file-name" v-if="fileName">{{ fileName }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>图片格式：</label>
+          <select v-model="form.format">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>线程数：</label>
+          <input type="number" v-model.number="form.threads" min="1" max="16" />
+        </div>
+
+        <div class="form-group">
+          <label>输出图片尺寸（如 1920x1080，可选）：</label>
+          <input type="text" v-model="form.size" placeholder="可选，如 1920x1080" />
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" v-model="form.grayscale" id="grayscale" />
+            <label for="grayscale">转换为灰度图</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>自定义输出文件名前缀（可选）：</label>
+          <input type="text" v-model="form.prefix" placeholder="默认使用 PDF 文件名" />
+        </div>
+
+        <button type="submit" :disabled="isLoading">
+          <i class="fas" :class="isLoading ? 'fa-spinner fa-pulse' : 'fa-cog'"></i>
+          {{ isLoading ? '处理中...' : '上传并转换' }}
+        </button>
+      </form>
+
+      <div v-if="isLoading" class="loading-container">
+        <i class="fas fa-spinner fa-pulse"></i> {{ statusMessage }}
+        <div class="progress-bar">
+          <div class="progress" :style="{ width: progress + '%' }"></div>
+        </div>
+        <div class="status-text">任务ID: {{ currentTaskId }}</div>
+      </div>
+
+      <div v-if="result.downloadUrl" class="result-container">
+        <p><i class="fas fa-check-circle"></i> 转换成功！</p>
+        <a :href="result.downloadUrl" class="download-link" target="_blank">
+          <i class="fas fa-download"></i> 点击下载压缩包
+        </a>
+      </div>
+
+      <div v-if="error" class="error-container">
+        <p><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+        <button v-if="error" class="file-btn" style="margin-top: 10px;" @click="resetForm">
+          <i class="fas fa-redo"></i> 重试
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          file: null,
+          fileName: '',
+          isLoading: false,
+          progress: 0,
+          statusMessage: '准备上传文件...',
+          currentTaskId: '',
+          checkStatusInterval: null,
+          form: {
+            format: 'png',
+            threads: 4,
+            size: '',
+            grayscale: false,
+            prefix: ''
+          },
+          result: {},
+          error: ''
+        };
+      },
+      methods: {
+        handleFileChange(event) {
+          this.file = event.target.files[0];
+          this.fileName = this.file ? this.file.name : '';
+          this.resetResult();
+        },
+        resetResult() {
+          this.result = {};
+          this.error = '';
+          this.progress = 0;
+        },
+        resetForm() {
+          this.file = null;
+          this.fileName = '';
+          this.resetResult();
+        },
+        async checkTaskStatus(taskId) {
+          try {
+            const response = await fetch(`/status/${taskId}`);
+            if (!response.ok) {
+              throw new Error('获取状态失败');
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'completed') {
+              this.isLoading = false;
+              this.progress = 100;
+              this.statusMessage = '转换完成！';
+              this.result = {
+                downloadUrl: `/download/${data.download_url.split('/').pop()}`
+              };
+              clearInterval(this.checkStatusInterval);
+            } else if (data.status === 'failed') {
+              this.isLoading = false;
+              this.error = data.error || '处理过程中发生错误';
+              clearInterval(this.checkStatusInterval);
+            } else {
+              // 处理中状态，更新进度和状态消息
+              this.progress = Math.min(this.progress + 10, 90); // 模拟进度增加
+              this.statusMessage = '正在处理PDF文件...';
+            }
+          } catch (err) {
+            console.error('检查状态错误:', err);
+            this.progress = Math.min(this.progress + 5, 95); // 即使出错也稍微增加进度
+          }
+        },
+        async handleSubmit() {
+          if (!this.file) {
+            this.error = '请先选择一个 PDF 文件';
+            return;
+          }
+
+          this.isLoading = true;
+          this.progress = 0;
+          this.statusMessage = '准备上传文件...';
+          this.resetResult();
+
+          const formData = new FormData();
+          formData.append('file', this.file);
+          // 根据后端实际支持的参数添加
+          formData.append('format', this.form.format);
+          formData.append('threads', this.form.threads);
+          formData.append('size', this.form.size);
+          formData.append('grayscale', this.form.grayscale);
+          formData.append('prefix', this.form.prefix);
+
+          try {
+            this.statusMessage = '上传文件中...';
+            
+            const res = await fetch('/upload', {
+              method: 'POST',
+              body: formData
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+              this.currentTaskId = data.task_id;
+              this.statusMessage = '文件上传成功，开始处理...';
+              this.progress = 20;
+              
+              // 开始轮询检查状态
+              this.checkStatusInterval = setInterval(() => {
+                this.checkTaskStatus(data.task_id);
+              }, 2000);
+            } else {
+              this.isLoading = false;
+              this.error = data.error || '上传失败，请重试';
+            }
+          } catch (err) {
+            this.isLoading = false;
+            this.error = '请求失败，请检查网络连接';
+            console.error('Error:', err);
+          }
+        }
+      },
+      beforeUnmount() {
+        if (this.checkStatusInterval) {
+          clearInterval(this.checkStatusInterval);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
