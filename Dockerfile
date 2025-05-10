@@ -18,9 +18,6 @@ RUN pyinstaller --onefile pdf_to_images.py && \
 COPY app.py ./
 COPY templates ./templates
 
-# 创建上传和输出目录
-RUN mkdir -p uploads converted_images && chmod 777 uploads converted_images
-
 # 暴露端口
 EXPOSE 8080
 

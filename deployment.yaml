@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: pdf-converter
-        image: registry.cn-hangzhou.aliyuncs.com/tianxiang_app/pdf_web_converter:v2
+        image: pdf_web_converter:latest
         imagePullPolicy: IfNotPresent
         ports:
           - containerPort: 8080  # 容器内部端口
